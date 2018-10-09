@@ -49,7 +49,7 @@ class SearchLocationTableViewController: UITableViewController, UISearchBarDeleg
     // MARK: - UISearchBarDelegate
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        if let searchHelper = searchHelper{
+        if let searchHelper = searchHelper, searchHelper.isSearching{
             searchHelper.cancel()
         }
         let mkSearchRequest = MKLocalSearchRequest()
@@ -75,7 +75,10 @@ class SearchLocationTableViewController: UITableViewController, UISearchBarDeleg
             let navVc = presentingViewController as? UINavigationController,
             let mapVC = navVc.viewControllers.last as? MapViewController{
             dismiss(animated: true, completion: {
+                mapVC.shouldRemovePin = false
+                mapVC.afterSearch = true
                 mapVC.mapView.setRegion(MKCoordinateRegionMakeWithDistance(location.coordinate, 1000.0, 1000.0), animated: true)
+                mapVC.mapView.addAnnotation(Pin(coordinate: location.coordinate, title: placemark.name ?? "", subtitle: ""))
             })
         }
     }

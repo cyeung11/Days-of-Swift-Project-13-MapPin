@@ -13,6 +13,8 @@ class MapViewController: UIViewController {
     
     let targetLocationZoomDistance = 10000.0
     var shouldCenterUserLocation = false
+    var shouldRemovePin = false
+    var afterSearch = false
     
     var targetLocation: CLLocationCoordinate2D?
     let manager = CLLocationManager()
@@ -33,6 +35,7 @@ class MapViewController: UIViewController {
     }
     @IBOutlet weak var mapView: MKMapView!{
         didSet{
+            mapView.delegate = self
             if let model = model{
                 mapView.showAnnotations(model.pins, animated: false)
             }
@@ -64,17 +67,45 @@ class MapViewController: UIViewController {
     }
     
     @IBAction func selectLocation(_ sender: UILongPressGestureRecognizer) {
+        
         if callback != nil{
             let touchLocation = sender.location(in: mapView)
             let touchCoordinate = mapView.convert(touchLocation, toCoordinateFrom: mapView)
+            let touchPin = Pin(coordinate: touchCoordinate, title: "", subtitle: "")
             
             let clLocation = CLLocation(latitude: touchCoordinate.latitude, longitude: touchCoordinate.longitude)
+            mapView.addAnnotation(touchPin)
+            
             let geoDecoder = CLGeocoder()
             geoDecoder.reverseGeocodeLocation(clLocation) { (placemark, _) in
                 
-                self.callback?.didSelect(locationAt: touchCoordinate, withAdditionalInfo: placemark)
-                self.callback = nil
-                self.navigationController?.popViewController(animated: true)
+                let addDialog = UIAlertController(title: "Add", message: "Please enter location details", preferredStyle: .alert)
+                addDialog.addTextField { (tf) in
+                    tf.placeholder = "City"
+                    tf.borderStyle = .none
+                    if let info = placemark, info.count > 0{
+                        tf.text = info.first!.name
+                    }
+                }
+                addDialog.addTextField { (tf) in
+                    tf.placeholder = "Details"
+                    tf.borderStyle = .none
+                }
+                addDialog.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { (action) in
+                    self.mapView.removeAnnotations(self.mapView.annotations.filter{ $0.coordinate == touchCoordinate})
+                    addDialog.dismiss(animated: true, completion: nil)
+                }))
+                addDialog.addAction(UIAlertAction(title: "Confirm", style: .default, handler: { (action) in
+                    addDialog.dismiss(animated: true, completion: nil)
+                    let pinToAdded = Pin(coordinate: touchCoordinate, title: addDialog.textFields?.first?.text ?? "", subtitle: addDialog.textFields?[1].text ?? "")
+                    self.callback?.didAdd(pinAt: pinToAdded)
+                    self.model?.pins.append(pinToAdded)
+                    let annotation = self.mapView.annotations.filter{ $0.coordinate == touchCoordinate}
+                    self.mapView.removeAnnotations(annotation)
+                    self.mapView.addAnnotation(pinToAdded)
+                }))
+            
+                self.present(addDialog, animated: true, completion: nil)
             }
             
         }
@@ -93,6 +124,8 @@ class MapViewController: UIViewController {
             searchVC.region = mapView.region
         }
     }
+    
+    
     
 }
 
@@ -114,3 +147,52 @@ extension MapViewController: CLLocationManagerDelegate{
     }
 }
 
+extension MapViewController: MKMapViewDelegate{
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+        if manager.location?.coordinate == annotation.coordinate {
+            return nil
+        }
+        
+        var view = mapView.dequeueReusableAnnotationView(withIdentifier: "Annotation")
+        if view == nil {
+            view = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "Annotation")
+            view!.canShowCallout = true
+        } else {
+            view!.annotation = annotation
+        }
+        return view
+    }
+    
+    func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+        if afterSearch{
+            if shouldRemovePin{
+                let a = mapView.annotations.filter({!(model?.pins.map({$0.coordinate}).contains($0.coordinate) ?? false)})
+                mapView.removeAnnotations(a)
+                shouldRemovePin = false
+                afterSearch = false
+            } else {
+                shouldRemovePin = true
+            }
+        }
+    }
+    
+}
+
+extension CLLocationCoordinate2D: Equatable{
+    public static func ==(lhs: CLLocationCoordinate2D, rhs: CLLocationCoordinate2D) -> Bool {
+        return lhs.latitude == rhs.latitude && lhs.longitude == rhs.longitude
+    }
+}
+
+extension MKAnnotation{
+    func toPin() -> Pin {
+        let title = self.title == nil ? "" : self.title!
+        var subtitle = ""
+        if let nonNullSubtitle = self.subtitle, let certainlyNonNullSubtitle = nonNullSubtitle{
+            subtitle = certainlyNonNullSubtitle
+        }
+ 
+         return Pin(coordinate: self.coordinate, title: title!, subtitle: subtitle)
+    }
+    
+}

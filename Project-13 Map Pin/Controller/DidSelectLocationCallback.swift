@@ -10,5 +10,5 @@ import Foundation
 import MapKit
 
 protocol DidSelectLocationCallback {
-    func didSelect(locationAt location: CLLocationCoordinate2D, withAdditionalInfo info: [CLPlacemark]?)
+    func didAdd(pinAt pin: Pin)
 }

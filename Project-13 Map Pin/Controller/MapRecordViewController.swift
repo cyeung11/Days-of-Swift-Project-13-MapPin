@@ -12,9 +12,9 @@ import MapKit
 class MapRecordViewController: UITableViewController, DidSelectLocationCallback {
 
     var model = MapPins()
-    var addCityTF: UITextField?
-    var addDetailTF: UITextField?
-    var addDialog: UIAlertController?
+//    var addCityTF: UITextField?
+//    var addDetailTF: UITextField?
+//    var addDialog: UIAlertController?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -27,9 +27,9 @@ class MapRecordViewController: UITableViewController, DidSelectLocationCallback 
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        if let addDialog = addDialog{
-            present(addDialog, animated: true, completion: nil)
-        }
+//        if let addDialog = addDialog{
+//            present(addDialog, animated: true, completion: nil)
+//        }
     }
     
     // MARK: - Table view data source
@@ -94,38 +94,42 @@ class MapRecordViewController: UITableViewController, DidSelectLocationCallback 
         }
     }
     
-    func didSelect(locationAt location: CLLocationCoordinate2D, withAdditionalInfo info: [CLPlacemark]?) {
-        
-        addDialog = UIAlertController(title: "Add", message: "Please enter location details", preferredStyle: .alert)
-        addDialog!.addTextField { (tf) in
-            tf.placeholder = "City"
-            tf.borderStyle = .none
-            if let info = info, info.count > 0{
-                tf.text = info.first!.name
-            }
-            self.addCityTF = tf
-        }
-        addDialog!.addTextField { (tf) in
-            tf.placeholder = "Details"
-            tf.borderStyle = .none
-            self.addDetailTF = tf
-        }
-        addDialog!.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { (action) in
-            self.addCityTF = nil
-            self.addDetailTF = nil
-            self.addDialog!.dismiss(animated: true, completion: nil)
-            self.addDialog = nil
-        }))
-        addDialog!.addAction(UIAlertAction(title: "Confirm", style: .default, handler: { (action) in
-            self.model.pins.append(Pin(coordinate: location, title: self.addCityTF?.text ?? "", subtitle: self.addDetailTF?.text ?? ""))
-            self.tableView.insertRows(at: [IndexPath(item: self.model.pins.count - 1, section: 0)], with: .automatic)
-            self.addCityTF = nil
-            self.addDetailTF = nil
-            self.addDialog!.dismiss(animated: true, completion: nil)
-            self.addDialog = nil
-            
-        }))
-        
+//    func didSelect(locationAt location: CLLocationCoordinate2D, withAdditionalInfo info: [CLPlacemark]?) {
+//
+//        addDialog = UIAlertController(title: "Add", message: "Please enter location details", preferredStyle: .alert)
+//        addDialog!.addTextField { (tf) in
+//            tf.placeholder = "City"
+//            tf.borderStyle = .none
+//            if let info = info, info.count > 0{
+//                tf.text = info.first!.name
+//            }
+//            self.addCityTF = tf
+//        }
+//        addDialog!.addTextField { (tf) in
+//            tf.placeholder = "Details"
+//            tf.borderStyle = .none
+//            self.addDetailTF = tf
+//        }
+//        addDialog!.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { (action) in
+//            self.addCityTF = nil
+//            self.addDetailTF = nil
+//            self.addDialog!.dismiss(animated: true, completion: nil)
+//            self.addDialog = nil
+//        }))
+//        addDialog!.addAction(UIAlertAction(title: "Confirm", style: .default, handler: { (action) in
+//            self.model.pins.append(Pin(coordinate: location, title: self.addCityTF?.text ?? "", subtitle: self.addDetailTF?.text ?? ""))
+//            self.tableView.insertRows(at: [IndexPath(item: self.model.pins.count - 1, section: 0)], with: .automatic)
+//            self.addCityTF = nil
+//            self.addDetailTF = nil
+//            self.addDialog!.dismiss(animated: true, completion: nil)
+//            self.addDialog = nil
+//
+//        }))
+//
+//    }
+    func didAdd(pinAt pin: Pin) {
+        model.pins.append(pin)
+        tableView.insertRows(at: [IndexPath(item: self.model.pins.count - 1, section: 0)], with: .automatic)
     }
     
     @objc func didEnterBackground(){
